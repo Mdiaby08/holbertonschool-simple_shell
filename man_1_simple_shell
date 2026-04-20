@@ -1,0 +1,26 @@
+.TH simple_shell 1
+.SH NAME
+simple_shell - minimal Unix shell
+
+.SH SYNOPSIS
+.B hsh
+.RI [command]
+
+.SH DESCRIPTION
+simple_shell is an implementation of the Unix shell. It reads standard input, parses commands, looks up executables in the PATH, and executes programs via fork and execve.
+
+.SH FEATURES
+- Execution of simple commands
+- PATH management
+- Interactive and non-interactive modes
+- Built-in: exit
+
+.SH EXAMPLES
+$ hsh
+($) /bin/ls
+($) exit
+
+$ echo "/bin/ls" | hsh
+
+.SH AUTHORS
+See the AUTHORS file.
