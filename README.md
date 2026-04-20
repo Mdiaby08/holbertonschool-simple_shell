@@ -1,13 +1,14 @@
 # holbertonschool-simple_shell
 
 ## Description
-simple_shell est une implémentation minimale d’un shell Unix.
-Il permet d’exécuter des commandes, gérer le PATH, lancer des processus.
+simple_shell is a minimal implementation of a Unix shell.
 
-## Fonctionnalités
-- Exécution de commandes simples
-- Gestion du PATH
-- Builtin : exit
+It allows you to execute commands, manage the PATH, and launch processes.
+
+## Features
+- Execute simple commands
+- Manage the PATH
+- Builtin: exit
 
 ## Compilation
 gcc -Wall -Werror -Wextra -pedantic -std=gnu89 *.c -o hs
