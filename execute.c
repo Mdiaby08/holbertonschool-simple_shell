@@ -15,9 +15,7 @@ return;
 
 if (child == 0)
 {
-char *args[2];
-args[0] = line;
-args[1] = NULL;
+args = split_line(line);
 
 if (execve(line, args, environ) == -1)
 {
