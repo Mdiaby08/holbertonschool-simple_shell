@@ -3,7 +3,6 @@
 int main(void)
 {
 char *line;
-int status = 0;
 
 while (1)
 {
