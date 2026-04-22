@@ -14,5 +14,6 @@ return (NULL);
 }
 
 remove_newline(line);
+trim_spaces(line);
 return (line);
 }
