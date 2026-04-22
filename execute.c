@@ -6,6 +6,7 @@ void execute_command(char *line)
 {
 pid_t child = fork();
 int status;
+char **args;
 
 if (child == -1)
 {
