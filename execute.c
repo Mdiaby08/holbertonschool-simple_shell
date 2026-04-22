@@ -17,6 +17,9 @@ return;
 if (child == 0)
 {
 if (execve(line, args, environ) == -1)
+char *args[2];
+args[0] = line;
+args[1] = NULL;
 {
 perror("./shell");
 exit(1);
