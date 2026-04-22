@@ -6,6 +6,7 @@ void execute_command(char *line)
 {
 pid_t child = fork();
 int status;
+char *args[] = {line, NULL};
 
 if (child == -1)
 {
@@ -15,7 +16,7 @@ return;
 
 if (child == 0)
 {
-if (execve(line, NULL, environ) == -1)
+if (execve(line, args, environ) == -1)
 {
 perror("./shell");
 exit(1);
