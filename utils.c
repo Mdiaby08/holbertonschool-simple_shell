@@ -9,11 +9,15 @@ void trim_spaces(char *line)
 {
 int i = 0;
 int j = strlen(line) - 1;
+
 while (line[i] == ' ' || line[i] == '\t')
 i++;
+
 while (j >= i && (line[j] == ' ' || line[j] == '\t'))
 j--;
+
 line[j + 1] = '\0';
+
 if (i > 0)
 memmove(line, line + i, j - i + 2);
 }
@@ -28,7 +32,6 @@ args = malloc(sizeof(char *) * 64);
 if (!args)
 return (NULL);
 
-/* Découpe sur espace ET tabulation */
 token = strtok(line, " \t");
 while (token)
 {
@@ -36,16 +39,7 @@ args[i] = token;
 i++;
 token = strtok(NULL, " \t");
 }
+
 args[i] = NULL;
 return (args);
-}
-
-void print_not_found(char *cmd)
-
-free(copy);
-return (NULL);
-{
-write(STDERR_FILENO, "./hsh: 1: ", 11);
-write(STDERR_FILENO, cmd, strlen(cmd));
-write(STDERR_FILENO, ": not found", 11);
 }
