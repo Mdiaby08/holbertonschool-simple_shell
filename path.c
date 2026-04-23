@@ -1,6 +1,24 @@
 #include "shell.h"
 
 /**
+ * duplicate_string - creates a copy of a string
+ * @str: string to copy
+ *
+ * Return: allocated copy of str, or NULL on failure
+ */
+static char *duplicate_string(char *str)
+{
+	char *copy;
+
+	copy = malloc(strlen(str) + 1);
+	if (copy == NULL)
+		return (NULL);
+
+	strcpy(copy, str);
+	return (copy);
+}
+
+/**
  * get_path_value - gets the PATH value from the environment
  *
  * Return: pointer to PATH value, or NULL if not found
@@ -28,7 +46,7 @@ char *get_path_value(void)
 char *build_path(char *dir, char *command)
 {
 	char *full_path;
-	int len;
+	size_t len;
 
 	len = strlen(dir) + strlen(command) + 2;
 	full_path = malloc(sizeof(char) * len);
@@ -52,14 +70,14 @@ char *find_command(char *command)
 {
 	char *path_env, *path_copy, *dir, *full_path, *cmd_copy;
 
+	if (command == NULL || command[0] == '\0')
+		return (NULL);
+
 	if (strchr(command, '/') != NULL)
 	{
 		if (access(command, X_OK) == 0)
 		{
-			cmd_copy = malloc(strlen(command) + 1);
-			if (cmd_copy == NULL)
-				return (NULL);
-			strcpy(cmd_copy, command);
+			cmd_copy = duplicate_string(command);
 			return (cmd_copy);
 		}
 		return (NULL);
@@ -69,11 +87,9 @@ char *find_command(char *command)
 	if (path_env == NULL)
 		return (NULL);
 
-	path_copy = malloc(strlen(path_env) + 1);
+	path_copy = duplicate_string(path_env);
 	if (path_copy == NULL)
 		return (NULL);
-
-	strcpy(path_copy, path_env);
 	dir = strtok(path_copy, ":");
 	while (dir != NULL)
 	{
