@@ -42,8 +42,8 @@ return (args);
 
 void print_not_found(char *cmd)
 
-    free(copy);
-    return (NULL);
+free(copy);
+return (NULL);
 {
 write(STDERR_FILENO, "./hsh: 1: ", 11);
 write(STDERR_FILENO, cmd, strlen(cmd));
