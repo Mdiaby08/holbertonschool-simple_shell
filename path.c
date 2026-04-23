@@ -68,7 +68,7 @@ char *build_path(char *dir, char *command)
  */
 char *find_command(char *command)
 {
-	char *path_env, *path_copy, *dir, *full_path, *cmd_copy;
+	char *path_env, *path_copy, *dir, *full_path;
 
 	if (command == NULL || command[0] == '\0')
 		return (NULL);
@@ -76,20 +76,18 @@ char *find_command(char *command)
 	if (strchr(command, '/') != NULL)
 	{
 		if (access(command, X_OK) == 0)
-		{
-			cmd_copy = duplicate_string(command);
-			return (cmd_copy);
-		}
+			return (duplicate_string(command));
 		return (NULL);
 	}
 
 	path_env = get_path_value();
-	if (path_env == NULL)
+	if (path_env == NULL || path_env[0] == '\0')
 		return (NULL);
 
 	path_copy = duplicate_string(path_env);
 	if (path_copy == NULL)
 		return (NULL);
+
 	dir = strtok(path_copy, ":");
 	while (dir != NULL)
 	{
