@@ -41,5 +41,5 @@ void print_not_found(char *cmd)
 {
 write(STDERR_FILENO, "./hsh: 1: ", 11);
 write(STDERR_FILENO, cmd, strlen(cmd));
-write(STDERR_FILENO, ": not found\n", 12);
+write(STDERR_FILENO, ": not found", 11);
 }
