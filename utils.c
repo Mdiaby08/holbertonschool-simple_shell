@@ -16,7 +16,7 @@ int i = 0;
 /* tableau de 64 mots max → suffisant pour simple_shell */
 args = malloc(sizeof(char *) * 64);
 if (!args)
-return NULL;
+return (NULL);
 
 /* découper sur espace et tabulation */
 token = strtok(line, " \t");
@@ -28,5 +28,5 @@ token = strtok(NULL, " \t");
 }
 
 args[i] = NULL; /* fin du tableau */
-return args;
+return (args);
 }
