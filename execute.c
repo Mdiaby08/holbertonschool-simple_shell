@@ -18,7 +18,7 @@ void execute_command(char *line)
         {
             write(STDERR_FILENO, "./hsh: 1: ", 11);
             write(STDERR_FILENO, args[0], strlen(args[0]));
-            write(STDERR_FILENO, ": not found\n", 12);
+            write(STDERR_FILENO, ":not found\n", 12);
             free(args);
             exit(127);
         }
@@ -31,7 +31,7 @@ void execute_command(char *line)
         {
             write(STDERR_FILENO, "./hsh: 1: ", 11);
             write(STDERR_FILENO, args[0], strlen(args[0]));
-            write(STDERR_FILENO, ": not found\n", 12);
+            write(STDERR_FILENO, ":not found\n", 12);
 ;
             free(args);
             exit(127);
