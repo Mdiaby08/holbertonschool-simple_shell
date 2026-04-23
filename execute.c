@@ -4,58 +4,63 @@ extern char **environ;
 
 void execute_command(char *line)
 {
-pid_t child;
-int status;
-char **args;
-char *cmd_path = NULL;
+    pid_t child;
+    int status;
+    char **args;
+    char *cmd_path = NULL;
 
-args = split_line(line);
+    args = split_line(line);
 
-/* Trouver le chemin */
-if (strchr(args[0], '/'))
-{
-if (access(args[0], X_OK) != 0)
-{
-perror("./hsh");
-free(args);
-return;
-}
-cmd_path = args[0];
-}
-else
-{
-cmd_path = find_path(args[0]);
-if (!cmd_path)
-{
-print_not_found(args[0]);
-free(args);
-exit(127);
-}
-/* fork */
-child = fork();
-if (child == -1)
-{
-perror("fork");
-if (cmd_path != args[0])
-free(cmd_path);
-free(args);
-return;
-}
+    /* Si la commande contient un / */
+    if (strchr(args[0], '/'))
+    {
+        if (access(args[0], X_OK) != 0)
+        {
+            write(STDERR_FILENO, "./hsh: 1: ", 11);
+            write(STDERR_FILENO, args[0], strlen(args[0]));
+            write(STDERR_FILENO, ": not found\n", 12);
+            free(args);
+            exit(127);
+        }
+        cmd_path = args[0];
+    }
+    else
+    {
+        cmd_path = find_path(args[0]);
+        if (!cmd_path)
+        {
+            write(STDERR_FILENO, "./hsh: 1: ", 11);
+            write(STDERR_FILENO, args[0], strlen(args[0]));
+            write(STDERR_FILENO, ": not found\n", 12);
+            free(args);
+            exit(127);
+        }
+    }
 
-if (child == 0)
-{
-execve(cmd_path, args, environ);
-perror("./hsh");
-exit(1);
-}
-else
-{
-wait(&status);
-}
+    /* fork + execve */
+    child = fork();
+    if (child == -1)
+    {
+        perror("fork");
+        if (cmd_path != args[0])
+            free(cmd_path);
+        free(args);
+        return;
+    }
 
-/* free */
-if (cmd_path != args[0])
-free(cmd_path);
-free(args);
-}
+    if (child == 0)
+    {
+        execve(cmd_path, args, environ);
+        perror("./hsh");
+        exit(1);
+    }
+    else
+    {
+        wait(&status);
+    }
+
+    if (cmd_path != args[0])
+        free(cmd_path);
+
+    free(args);
 }
