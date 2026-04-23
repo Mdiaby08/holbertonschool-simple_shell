@@ -1,5 +1,6 @@
 #include "shell.h"
 
+/* environ = tableau des variables d'environnement */
 extern char **environ;
 
 /* copie simple de chaîne */
@@ -18,10 +19,12 @@ char *get_path_value(void)
 {
     int i;
 
+    /* parcourir toutes les variables d'environnement */
     for (i = 0; environ[i] != NULL; i++)
     {
+        /* chercher "PATH=" au début */
         if (strncmp(environ[i], "PATH=", 5) == 0)
-            return environ[i] + 5;
+            return environ[i] + 5; /* pointer après "PATH=" */
     }
 
     return NULL;
@@ -79,7 +82,7 @@ char *find_path(char *command)
         if (full_path && access(full_path, X_OK) == 0)
         {
             free(path_copy);
-            return full_path;
+            return full_path; /* trouvé */
         }
 
         free(full_path);
@@ -89,3 +92,4 @@ char *find_path(char *command)
     free(path_copy);
     return NULL;
 }
+

@@ -26,7 +26,7 @@ int main(void)
         if (nread == -1)
         {
             free(line);
-            return (0);
+            return 0;
         }
 
         /* enlever le '\n' final */
@@ -36,7 +36,6 @@ int main(void)
         execute_command(line);
     }
 
-    /* ne sera jamais atteint, mais propre */
     free(line);
-    return (0);
+    return 0;
 }

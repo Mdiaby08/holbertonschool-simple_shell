@@ -1,95 +1,149 @@
 #include "shell.h"
 
+/* environ = tableau des variables d'environnement */
 extern char **environ;
 
 /*
-* execute_command - analyse la commande, trouve son chemin,
-* exécute via fork/execve, ou affiche "not found".
-*/
+ * execute_command :
+ * - découpe la ligne
+ * - gère exit
+ * - gère env
+ * - cherche la commande
+ * - exécute avec fork/execve
+ */
 void execute_command(char *line)
 {
-pid_t child;
-int status;
-char **args;
-char *cmd_path = NULL;
+    pid_t child;          /* PID du fork */
+    int status;           /* statut du wait */
+    char **args;          /* liste des mots de la commande */
+    char *cmd_path = NULL;/* chemin final de la commande */
 
-/* Découpe la ligne en arguments */
-args = split_line(line);
+    /* ----------------------------------------------------------
+     * 1) Découper la ligne en mots
+     * ---------------------------------------------------------- */
+    args = split_line(line);
 
-/* ------------------------------
-* 1) CAS : la commande contient un '/'
-* Exemple : /bin/ls, ./a.out, ../hbtn_ls
-* ------------------------------ */
-if (strchr(args[0], '/'))
-{
-/* Vérifie que le fichier existe et est exécutable */
-if (access(args[0], X_OK) != 0)
-{
-/* Message EXACT attendu par le checker */
-write(STDERR_FILENO, "./hsh: 1: ", 10);
-write(STDERR_FILENO, args[0], strlen(args[0]));
-write(STDERR_FILENO, ": not found\n", 12);
+    /* si rien à exécuter → on sort */
+    if (!args || !args[0])
+    {
+        free(args);
+        return;
+    }
 
-free(args);
-exit(127); /* Code d'erreur standard pour "command not found" */
-}
+    /* ----------------------------------------------------------
+     * 2) BUILTIN : exit
+     * ---------------------------------------------------------- */
+    if (strcmp(args[0], "exit") == 0)
+    {
+        free(args);   /* éviter fuite mémoire */
+        exit(0);      /* quitter le shell */
+    }
 
-cmd_path = args[0]; /* On utilisera directement ce chemin */
-}
+    /* ----------------------------------------------------------
+     * 3) BUILTIN : env
+     * ---------------------------------------------------------- */
+    if (strcmp(args[0], "env") == 0)
+    {
+        int i = 0;
 
-/* ------------------------------
-* 2) CAS : commande SANS '/'
-* Exemple : ls, echo, pwd
-* → On doit chercher dans PATH
-* ------------------------------ */
-else
-{
-cmd_path = find_path(args[0]);
+        /* afficher chaque variable d'environnement */
+        while (environ[i])
+        {
+            write(STDOUT_FILENO, environ[i], strlen(environ[i]));
+            write(STDOUT_FILENO, "\n", 1);
+            i++;
+        }
 
-/* Si find_path() n'a rien trouvé → erreur */
-if (!cmd_path)
-{
-write(STDERR_FILENO, "./hsh: 1: ", 10);
-write(STDERR_FILENO, args[0], strlen(args[0]));
-write(STDERR_FILENO, ": not found\n", 12);
+        free(args);   /* pas de fork → on libère et on revient */
+        return;
+    }
 
-free(args);
-exit(127);
-}
-}
+    /* ----------------------------------------------------------
+     * 4) Commande contenant un '/'
+     *    Exemple : /bin/ls, ./a.out
+     * ---------------------------------------------------------- */
+    if (strchr(args[0], '/'))
+    {
+        /* vérifier que le fichier est exécutable */
+        if (access(args[0], X_OK) != 0)
+        {
+            /* message EXACT attendu par le checker */
+            write(STDERR_FILENO, "./hsh: 1: ", 11);
+            write(STDERR_FILENO, args[0], strlen(args[0]));
+            write(STDERR_FILENO, ": not found\n", 12);
 
-/* ------------------------------
-* 3) fork + execve
-* ------------------------------ */
-child = fork();
-if (child == -1)
-{
-perror("fork");
+            free(args);
+            exit(127); /* code standard "commande introuvable" */
+        }
 
-if (cmd_path != args[0])
-free(cmd_path);
-free(args);
-return;
-}
+        cmd_path = args[0]; /* on utilise tel quel */
+    }
 
-/* Processus enfant */
-if (child == 0)
-{
-execve(cmd_path, args, environ);
+    /* ----------------------------------------------------------
+     * 5) Commande SANS '/'
+     *    Exemple : ls, echo, pwd
+     *    → on cherche dans PATH
+     * ---------------------------------------------------------- */
+    else
+    {
+        cmd_path = find_path(args[0]);
 
-/* Si execve échoue */
-perror("./hsh");
-exit(1);
-}
+        /* si rien trouvé → erreur */
+        if (!cmd_path)
+        {
+            write(STDERR_FILENO, "./hsh: 1: ", 11);
+            write(STDERR_FILENO, args[0], strlen(args[0]));
+            write(STDERR_FILENO, ": not found\n", 12);
 
-/* Processus parent */
-else
-{
-wait(&status);
-}
+            free(args);
+            exit(127);
+        }
+    }
 
-/* Libérations mémoire */
-if (cmd_path != args[0])
-free(cmd_path);
-free(args);
+    /* ----------------------------------------------------------
+     * 6) fork + execve
+     * ---------------------------------------------------------- */
+    child = fork();
+
+    /* fork raté */
+    if (child == -1)
+    {
+        perror("fork");
+
+        /* libérer si find_path a alloué */
+        if (cmd_path != args[0])
+            free(cmd_path);
+
+        free(args);
+        return;
+    }
+
+    /* ------------------ PROCESSUS ENFANT ------------------ */
+    if (child == 0)
+    {
+        /* remplacer le programme courant par la commande */
+        execve(cmd_path, args, environ);
+
+        /* si execve échoue */
+        perror("./hsh");
+        exit(1);
+    }
+
+    /* ------------------ PROCESSUS PARENT ------------------ */
+    else
+    {
+        /* attendre la fin de l'enfant */
+        wait(&status);
+    }
+
+    /* ----------------------------------------------------------
+     * 7) Nettoyage mémoire
+     * ---------------------------------------------------------- */
+
+    /* libérer cmd_path si find_path l'a alloué */
+    if (cmd_path != args[0])
+        free(cmd_path);
+
+    /* libérer le tableau d'arguments */
+    free(args);
 }

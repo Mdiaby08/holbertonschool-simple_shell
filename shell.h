@@ -23,4 +23,10 @@ void execute_command(char *line);
 /* chercher une commande dans PATH */
 char *find_path(char *command);
 
+/* récupérer PATH */
+char *get_path_value(void);
+
+/* construire un chemin complet */
+char *build_path(char *dir, char *command);
+
 #endif

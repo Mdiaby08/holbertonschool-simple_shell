@@ -1,48 +1,32 @@
 #include "shell.h"
 
-/**
- * remove_newline - removes the trailing newline from a line
- * @line: input line
- */
+/* enlève le '\n' final de getline */
 void remove_newline(char *line)
 {
-	line[strcspn(line, "\n")] = '\0';
+    line[strcspn(line, "\n")] = '\0';
 }
 
-/**
- * split_line - splits a line into tokens
- * @line: input line
- *
- * Return: array of tokens, or NULL on failure
- */
+/* découpe la ligne en mots (tokens) */
 char **split_line(char *line)
 {
-	char **args;
-	char *token;
-	int i;
+    char **args;
+    char *token;
+    int i = 0;
 
-	args = malloc(sizeof(char *) * 64);
-	if (args == NULL)
-		return (NULL);
+    /* tableau de 64 mots max → suffisant pour simple_shell */
+    args = malloc(sizeof(char *) * 64);
+    if (!args)
+        return NULL;
 
-	token = strtok(line, " \t");
-	i = 0;
-	while (token != NULL)
-	{
-		args[i] = token;
-		i++;
-		token = strtok(NULL, " \t");
-	}
-	args[i] = NULL;
+    /* découper sur espace et tabulation */
+    token = strtok(line, " \t");
+    while (token)
+    {
+        args[i] = token;
+        i++;
+        token = strtok(NULL, " \t");
+    }
 
-	return (args);
-}
-
-/**
- * free_tokens - frees a token array
- * @args: token array to free
- */
-void free_tokens(char **args)
-{
-	free(args);
+    args[i] = NULL; /* fin du tableau */
+    return args;
 }
