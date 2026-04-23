@@ -10,6 +10,8 @@
 #include <sys/wait.h>
 
 /* ------------------ PROTOTYPES ------------------ */
+extern char **environ;
+
 void remove_newline(char *line);
 char **split_line(char *line);
 int execute_command(char *line, char *progname);
