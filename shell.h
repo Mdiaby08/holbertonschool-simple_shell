@@ -3,18 +3,21 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <unistd.h>
+
+extern char **environ;
 
 void display_prompt(void);
-char *read_line(void);
+ssize_t read_line(char **line, size_t *len);
 void remove_newline(char *line);
-void execute_command(char *line);
-void trim_spaces(char *line);
 char **split_line(char *line);
-char *find_path(char *command);
+void free_tokens(char **args);
+char *get_path_value(void);
+char *build_path(char *dir, char *command);
+char *find_command(char *command);
+int execute_command(char *line, char *program_name, unsigned int count);
 
-
-#endif
+#endif /* SHELL_H */
