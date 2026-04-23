@@ -23,6 +23,8 @@ static char *duplicate_string(char *str)
  *
  * Return: pointer to PATH value, or NULL if not found
  */
+extern char **environ;
+
 char *get_path_value(void)
 {
 	int i;
