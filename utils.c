@@ -23,21 +23,27 @@ char **split_line(char *line)
 char **args;
 char *token;
 int i = 0;
+
 args = malloc(sizeof(char *) * 64);
 if (!args)
 return (NULL);
-token = strtok(line, " ");
+
+/* Découpe sur espace ET tabulation */
+token = strtok(line, " \t");
 while (token)
 {
 args[i] = token;
 i++;
-token = strtok(NULL, " ");
+token = strtok(NULL, " \t");
 }
 args[i] = NULL;
 return (args);
 }
 
 void print_not_found(char *cmd)
+
+    free(copy);
+    return (NULL);
 {
 write(STDERR_FILENO, "./hsh: 1: ", 11);
 write(STDERR_FILENO, cmd, strlen(cmd));
