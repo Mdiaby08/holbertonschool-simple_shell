@@ -1,41 +1,41 @@
 #include "shell.h"
 
-/*
- * main :
- * - boucle infinie du shell
- * - affiche le prompt si interactif
- * - lit une ligne
- * - exécute la commande
+/**
+ * main - entry point of the simple shell
+ * @argc: argument count (unused)
+ * @argv: argument vector, argv[0] is the program name
+ *
+ * Return: last command exit status
  */
-int main(void)
+int main(int argc, char **argv)
 {
-    char *line = NULL;   /* ligne tapée par l'utilisateur */
-    size_t len = 0;      /* taille du buffer getline */
-    ssize_t nread;       /* nombre de caractères lus */
+	char *line = NULL;
+	size_t len = 0;
+	ssize_t nread;
+	int last_status = 0;
 
-    while (1)
-    {
-        /* afficher le prompt seulement si terminal interactif */
-        if (isatty(STDIN_FILENO))
-            write(STDOUT_FILENO, "$ ", 2);
+	(void)argc;
 
-        /* lire une ligne (getline alloue si line == NULL) */
-        nread = getline(&line, &len, stdin);
+	while (1)
+	{
+		if (isatty(STDIN_FILENO))
+			write(STDOUT_FILENO, "$ ", 2);
 
-        /* si CTRL+D → quitter proprement */
-        if (nread == -1)
-        {
-            free(line);
-            return 0;
-        }
+		nread = getline(&line, &len, stdin);
 
-        /* enlever le '\n' final */
-        remove_newline(line);
+		if (nread == -1)
+		{
+			if (isatty(STDIN_FILENO))
+				write(STDOUT_FILENO, "\n", 1);
+			free(line);
+			return (last_status);
+		}
 
-        /* exécuter la commande */
-        execute_command(line);
-    }
+		remove_newline(line);
 
-    free(line);
-    return 0;
+		last_status = execute_command(line, argv[0]);
+	}
+
+	free(line);
+	return (last_status);
 }

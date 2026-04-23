@@ -3,147 +3,114 @@
 /* environ = tableau des variables d'environnement */
 extern char **environ;
 
-/*
- * execute_command :
- * - découpe la ligne
- * - gère exit
- * - gère env
- * - cherche la commande
- * - exécute avec fork/execve
+/**
+ * print_error - prints "progname: 1: cmd: not found\n" to stderr
+ * @progname: argv[0] of the shell
+ * @cmd: the command that was not found
  */
-void execute_command(char *line)
+static void print_error(char *progname, char *cmd)
 {
-    pid_t child;          /* PID du fork */
-    int status;           /* statut du wait */
-    char **args;          /* liste des mots de la commande */
-    char *cmd_path = NULL;/* chemin final de la commande */
+	write(STDERR_FILENO, progname, strlen(progname));
+	write(STDERR_FILENO, ": 1: ", 5);
+	write(STDERR_FILENO, cmd, strlen(cmd));
+	write(STDERR_FILENO, ": not found\n", 12);
+}
 
-    /* ----------------------------------------------------------
-     * 1) Découper la ligne en mots
-     * ---------------------------------------------------------- */
-    args = split_line(line);
+/**
+ * execute_command - parses and runs one command line
+ * @line: the raw input line
+ * @progname: argv[0] used for error messages
+ *
+ * Return: exit status of the command (0 on success, 127 if not found)
+ */
+int execute_command(char *line, char *progname)
+{
+	pid_t child;
+	int status;
+	char **args;
+	char *cmd_path = NULL;
 
-    /* si rien à exécuter → on sort */
-    if (!args || !args[0])
-    {
-        free(args);
-        return;
-    }
+	/* 1) tokenize */
+	args = split_line(line);
+	if (!args || !args[0])
+	{
+		free(args);
+		return (0);
+	}
 
-    /* ----------------------------------------------------------
-     * 2) BUILTIN : exit
-     * ---------------------------------------------------------- */
-    if (strcmp(args[0], "exit") == 0)
-    {
-        free(args);   /* éviter fuite mémoire */
-        exit(0);      /* quitter le shell */
-    }
+	/* 2) builtin: exit */
+	if (strcmp(args[0], "exit") == 0)
+	{
+		free(args);
+		exit(0);
+	}
 
-    /* ----------------------------------------------------------
-     * 3) BUILTIN : env
-     * ---------------------------------------------------------- */
-    if (strcmp(args[0], "env") == 0)
-    {
-        int i = 0;
+	/* 3) builtin: env */
+	if (strcmp(args[0], "env") == 0)
+	{
+		int i = 0;
 
-        /* afficher chaque variable d'environnement */
-        while (environ[i])
-        {
-            write(STDOUT_FILENO, environ[i], strlen(environ[i]));
-            write(STDOUT_FILENO, "\n", 1);
-            i++;
-        }
+		while (environ[i])
+		{
+			write(STDOUT_FILENO, environ[i], strlen(environ[i]));
+			write(STDOUT_FILENO, "\n", 1);
+			i++;
+		}
+		free(args);
+		return (0);
+	}
 
-        free(args);   /* pas de fork → on libère et on revient */
-        return;
-    }
+	/* 4) command with '/' — use directly */
+	if (strchr(args[0], '/'))
+	{
+		if (access(args[0], X_OK) != 0)
+		{
+			print_error(progname, args[0]);
+			free(args);
+			return (127);
+		}
+		cmd_path = args[0];
+	}
+	else
+	{
+		/* 5) search PATH */
+		cmd_path = find_path(args[0]);
+		if (!cmd_path)
+		{
+			print_error(progname, args[0]);
+			free(args);
+			return (127);
+		}
+	}
 
-    /* ----------------------------------------------------------
-     * 4) Commande contenant un '/'
-     *    Exemple : /bin/ls, ./a.out
-     * ---------------------------------------------------------- */
-    if (strchr(args[0], '/'))
-    {
-        /* vérifier que le fichier est exécutable */
-        if (access(args[0], X_OK) != 0)
-        {
-            /* message EXACT attendu par le checker */
-            write(STDERR_FILENO, "./hsh: 1: ", 11);
-            write(STDERR_FILENO, args[0], strlen(args[0]));
-            write(STDERR_FILENO, ": not found\n", 12);
+	/* 6) fork + execve */
+	child = fork();
+	if (child == -1)
+	{
+		perror("fork");
+		if (cmd_path != args[0])
+			free(cmd_path);
+		free(args);
+		return (1);
+	}
 
-            free(args);
-            exit(127); /* code standard "commande introuvable" */
-        }
+	if (child == 0)
+	{
+		execve(cmd_path, args, environ);
+		perror(progname);
+		exit(1);
+	}
+	else
+	{
+		waitpid(child, &status, 0);
+	}
 
-        cmd_path = args[0]; /* on utilise tel quel */
-    }
+	/* 7) cleanup */
+	if (cmd_path != args[0])
+		free(cmd_path);
+	free(args);
 
-    /* ----------------------------------------------------------
-     * 5) Commande SANS '/'
-     *    Exemple : ls, echo, pwd
-     *    → on cherche dans PATH
-     * ---------------------------------------------------------- */
-    else
-    {
-        cmd_path = find_path(args[0]);
-
-        /* si rien trouvé → erreur */
-        if (!cmd_path)
-        {
-            write(STDERR_FILENO, "./hsh: 1: ", 11);
-            write(STDERR_FILENO, args[0], strlen(args[0]));
-            write(STDERR_FILENO, ": not found\n", 12);
-
-            free(args);
-            exit(127);
-        }
-    }
-
-    /* ----------------------------------------------------------
-     * 6) fork + execve
-     * ---------------------------------------------------------- */
-    child = fork();
-
-    /* fork raté */
-    if (child == -1)
-    {
-        perror("fork");
-
-        /* libérer si find_path a alloué */
-        if (cmd_path != args[0])
-            free(cmd_path);
-
-        free(args);
-        return;
-    }
-
-    /* ------------------ PROCESSUS ENFANT ------------------ */
-    if (child == 0)
-    {
-        /* remplacer le programme courant par la commande */
-        execve(cmd_path, args, environ);
-
-        /* si execve échoue */
-        perror("./hsh");
-        exit(1);
-    }
-
-    /* ------------------ PROCESSUS PARENT ------------------ */
-    else
-    {
-        /* attendre la fin de l'enfant */
-        wait(&status);
-    }
-
-    /* ----------------------------------------------------------
-     * 7) Nettoyage mémoire
-     * ---------------------------------------------------------- */
-
-    /* libérer cmd_path si find_path l'a alloué */
-    if (cmd_path != args[0])
-        free(cmd_path);
-
-    /* libérer le tableau d'arguments */
-    free(args);
+	if (WIFEXITED(status))
+		return (WEXITSTATUS(status));
+	return (1);
 }
