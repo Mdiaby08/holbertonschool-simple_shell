@@ -14,6 +14,7 @@ void remove_newline(char *line);
 void execute_command(char *line);
 void trim_spaces(char *line);
 char **split_line(char *line);
+char *find_path(char *command);
 
 
 #endif
