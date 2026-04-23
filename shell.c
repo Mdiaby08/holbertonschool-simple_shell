@@ -1,36 +1,42 @@
 #include "shell.h"
 
-/**
- * main - entry point for the simple shell
- * @argc: number of arguments
- * @argv: array of arguments
- *
- * Return: 0 on success
+/*
+ * main :
+ * - boucle infinie du shell
+ * - affiche le prompt si interactif
+ * - lit une ligne
+ * - exécute la commande
  */
-int main(int argc, char **argv)
+int main(void)
 {
-	char *line;
-	size_t len;
-	ssize_t nread;
-	unsigned int count;
-	int status;
+    char *line = NULL;   /* ligne tapée par l'utilisateur */
+    size_t len = 0;      /* taille du buffer getline */
+    ssize_t nread;       /* nombre de caractères lus */
 
-	(void)argc;
-	line = NULL;
-	len = 0;
-	count = 0;
-	status = 0;
-	while (1)
-	{
-		display_prompt();
-		nread = read_line(&line, &len);
-		if (nread == -1)
-			break;
-		if (line[0] == '\0')
-			continue;
-		count++;
-		status = execute_command(line, argv[0], count);
-	}
-	free(line);
-	return (status);
+    while (1)
+    {
+        /* afficher le prompt seulement si terminal interactif */
+        if (isatty(STDIN_FILENO))
+            write(STDOUT_FILENO, "$ ", 2);
+
+        /* lire une ligne (getline alloue si line == NULL) */
+        nread = getline(&line, &len, stdin);
+
+        /* si CTRL+D → quitter proprement */
+        if (nread == -1)
+        {
+            free(line);
+            return (0);
+        }
+
+        /* enlever le '\n' final */
+        remove_newline(line);
+
+        /* exécuter la commande */
+        execute_command(line);
+    }
+
+    /* ne sera jamais atteint, mais propre */
+    free(line);
+    return (0);
 }
