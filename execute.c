@@ -26,7 +26,7 @@ if (strchr(args[0], '/'))
 if (access(args[0], X_OK) != 0)
 {
 /* Message EXACT attendu par le checker */
-write(STDERR_FILENO, "./hsh: 1: ", 11);
+write(STDERR_FILENO, "./hsh: 1: ", 10);
 write(STDERR_FILENO, args[0], strlen(args[0]));
 write(STDERR_FILENO, ": not found\n", 12);
 
@@ -49,7 +49,7 @@ cmd_path = find_path(args[0]);
 /* Si find_path() n'a rien trouvé → erreur */
 if (!cmd_path)
 {
-write(STDERR_FILENO, "./hsh: 1: ", 11);
+write(STDERR_FILENO, "./hsh: 1: ", 10);
 write(STDERR_FILENO, args[0], strlen(args[0]));
 write(STDERR_FILENO, ": not found\n", 12);
 
@@ -93,4 +93,3 @@ if (cmd_path != args[0])
 free(cmd_path);
 free(args);
 }
-
