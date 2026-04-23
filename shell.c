@@ -12,10 +12,14 @@ int main(int argc, char **argv)
 	char *line;
 	size_t len;
 	ssize_t nread;
+	unsigned int count;
+	int status;
 
 	(void)argc;
 	line = NULL;
 	len = 0;
+	count = 0;
+	status = 0;
 	while (1)
 	{
 		display_prompt();
@@ -24,8 +28,9 @@ int main(int argc, char **argv)
 			break;
 		if (line[0] == '\0')
 			continue;
-		execute_command(line, argv[0]);
+		count++;
+		status = execute_command(line, argv[0], count);
 	}
 	free(line);
-	return (0);
+	return (status);
 }

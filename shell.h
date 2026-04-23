@@ -18,6 +18,6 @@ void free_tokens(char **args);
 char *get_path_value(void);
 char *build_path(char *dir, char *command);
 char *find_command(char *command);
-int execute_command(char *line, char *program_name);
+int execute_command(char *line, char *program_name, unsigned int count);
 
 #endif /* SHELL_H */

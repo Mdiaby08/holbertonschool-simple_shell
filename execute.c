@@ -4,10 +4,11 @@
  * execute_command - forks and executes a command if it exists
  * @line: command line entered by the user
  * @program_name: shell program name for error reporting
+ * @count: command counter
  *
- * Return: 0 on success, 1 on failure
+ * Return: command exit status
  */
-int execute_command(char *line, char *program_name)
+int execute_command(char *line, char *program_name, unsigned int count)
 {
 	pid_t child;
 	int status;
@@ -18,15 +19,16 @@ int execute_command(char *line, char *program_name)
 	if (args == NULL || args[0] == NULL)
 	{
 		free_tokens(args);
-		return (1);
+		return (0);
 	}
 
 	command_path = find_command(args[0]);
 	if (command_path == NULL)
 	{
-		perror(program_name);
+		fprintf(stderr, "%s: %u: %s: not found\n",
+			program_name, count, args[0]);
 		free_tokens(args);
-		return (1);
+		return (127);
 	}
 
 	child = fork();
@@ -55,5 +57,7 @@ int execute_command(char *line, char *program_name)
 
 	free(command_path);
 	free_tokens(args);
-	return (0);
+	if (WIFEXITED(status))
+		return (WEXITSTATUS(status));
+	return (1);
 }
