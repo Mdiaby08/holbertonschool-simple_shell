@@ -1,6 +1,11 @@
 #include "shell.h"
+/**
+*remove_newline - enlève le '\n' final de getline 
+* 
+*
+*Return: void
+*/
 
-/* enlève le '\n' final de getline */
 void remove_newline(char *line)
 {
 line[strcspn(line, "\n")] = '\0';
