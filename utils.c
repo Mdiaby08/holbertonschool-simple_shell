@@ -9,15 +9,11 @@ void trim_spaces(char *line)
 {
 int i = 0;
 int j = strlen(line) - 1;
-
 while (line[i] == ' ' || line[i] == '\t')
 i++;
-
 while (j >= i && (line[j] == ' ' || line[j] == '\t'))
 j--;
-
 line[j + 1] = '\0';
-
 if (i > 0)
 memmove(line, line + i, j - i + 2);
 }
@@ -27,11 +23,9 @@ char **split_line(char *line)
 char **args;
 char *token;
 int i = 0;
-
 args = malloc(sizeof(char *) * 64);
 if (!args)
 return (NULL);
-
 token = strtok(line, " ");
 while (token)
 {
@@ -40,6 +34,12 @@ i++;
 token = strtok(NULL, " ");
 }
 args[i] = NULL;
-
 return (args);
+}
+
+void print_not_found(char *cmd)
+{
+write(STDERR_FILENO, "./hsh: 1: ", 11);
+write(STDERR_FILENO, cmd, strlen(cmd));
+write(STDERR_FILENO, ": not found\n", 12);
 }

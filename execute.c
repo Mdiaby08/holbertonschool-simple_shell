@@ -27,12 +27,10 @@ else
 cmd_path = find_path(args[0]);
 if (!cmd_path)
 {
-perror("./hsh");
+print_not_found(args[0]);
 free(args);
-return;
+exit(127);
 }
-}
-
 /* fork */
 child = fork();
 if (child == -1)
@@ -59,4 +57,5 @@ wait(&status);
 if (cmd_path != args[0])
 free(cmd_path);
 free(args);
+}
 }
