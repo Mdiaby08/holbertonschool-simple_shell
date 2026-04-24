@@ -2,6 +2,8 @@
 /**
 *remove_newline - enlève le '\n' final de getline
 *
+*@line: chaîne modifiée en place
+*
 *Return: void
 */
 
