@@ -46,7 +46,7 @@ static int handle_builtin(char **args)
  * @args: tokenized argument array
  * @progname: shell argv[0] for error messages
  *
- * Return: path string, or NULL if not found (error already printed)
+ * Return: path string, or NULL if not found
  */
 static char *resolve_cmd(char **args, char *progname)
 {
