@@ -1,7 +1,7 @@
 #include "shell.h"
 /**
-*remove_newline - enlève le '\n' final de getline 
-* 
+*remove_newline - enlève le '\n' final de getline
+*
 *Return: void
 */
 
