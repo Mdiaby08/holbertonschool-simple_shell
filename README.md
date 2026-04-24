@@ -5,18 +5,6 @@ Holberton School curriculum. It replicates the core behaviour of `/bin/sh`.
 
 ---
 
-## Table of Contents
-
-- [Description](#description)
-- [Requirements](#requirements)
-- [Files](#files)
-- [Compilation](#compilation)
-- [Usage](#usage)
-- [Built-ins](#built-ins)
-- [How It Works](#how-it-works)
-
----
-
 ## Description
 
 `hsh` is a simple UNIX shell that:
@@ -66,8 +54,6 @@ gcc -Wall -Werror -Wextra -pedantic -std=gnu89 *.c -o hsh
 ```
 
 ---
-
-## Usage
 
 ### Interactive mode
 
