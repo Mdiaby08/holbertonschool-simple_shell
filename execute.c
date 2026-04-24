@@ -105,29 +105,96 @@ static int fork_and_exec(char *cmd_path, char **args, char *progname)
  *
  * Return: exit status of the executed command
  */
-int execute_command(char *line, char *progname)
-{
-	char **args;
-	char *cmd_path;
-	int ret;
+#include "shell.h"
 
-	args = split_line(line);
-	if (!args || !args[0])
-	{
-		free(args);
-		return (0);
-	}
-	if (handle_builtin(args))
-		return (0);
-	cmd_path = resolve_cmd(args, progname);
-	if (!cmd_path)
-	{
-		free(args);
-		return (127);
-	}
-	ret = fork_and_exec(cmd_path, args, progname);
-	if (cmd_path != args[0])
-		free(cmd_path);
-	free(args);
-	return (ret);
+extern char **environ;
+
+void execute_command(char *line)
+{
+    pid_t child;
+    int status;
+    char **args;
+    char *cmd_path = NULL;
+
+    args = split_line(line);
+    if (!args || !args[0])
+    {
+        free(args);
+        return;
+    }
+
+    /* builtin: exit */
+    if (strcmp(args[0], "exit") == 0)
+    {
+        free(args);
+        exit(0);
+    }
+
+    /* builtin: env */
+    if (strcmp(args[0], "env") == 0)
+    {
+        int i = 0;
+        while (environ[i])
+        {
+            write(STDOUT_FILENO, environ[i], strlen(environ[i]));
+            write(STDOUT_FILENO, "\n", 1);
+            i++;
+        }
+        free(args);
+        return;
+    }
+
+    /* command with '/' */
+    if (strchr(args[0], '/'))
+    {
+        if (access(args[0], X_OK) != 0)
+        {
+            write(STDERR_FILENO, "./hsh: 1: ", 11);
+            write(STDERR_FILENO, args[0], strlen(args[0]));
+            write(STDERR_FILENO, ": not found\n", 12);
+            free(args);
+            exit(127);
+        }
+        cmd_path = args[0];
+    }
+    else
+    {
+        /* search in PATH */
+        cmd_path = find_path(args[0]);
+        if (!cmd_path)
+        {
+            write(STDERR_FILENO, "./hsh: 1: ", 11);
+            write(STDERR_FILENO, args[0], strlen(args[0]));
+            write(STDERR_FILENO, ": not found\n", 12);
+            free(args);
+            exit(127);
+        }
+    }
+
+    /* fork + execve */
+    child = fork();
+    if (child == -1)
+    {
+        perror("fork");
+        if (cmd_path != args[0])
+            free(cmd_path);
+        free(args);
+        return;
+    }
+
+    if (child == 0)
+    {
+        execve(cmd_path, args, environ);
+        perror("./hsh");
+        exit(1);
+    }
+    else
+    {
+        wait(&status);
+    }
+
+    if (cmd_path != args[0])
+        free(cmd_path);
+
+    free(args);
 }
