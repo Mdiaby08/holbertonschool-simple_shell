@@ -5,6 +5,7 @@ int main(void)
 	char *line = NULL;
 	size_t len = 0;
 	ssize_t nread;
+	int last_status = 0;
 
 	while (1)
 	{
@@ -15,7 +16,7 @@ int main(void)
 		if (nread == -1)
 		{
 			free(line);
-			return (0);
+			exit(last_status);
 		}
 
 		remove_newline(line);
@@ -23,10 +24,10 @@ int main(void)
 		if (strcmp(line, "exit") == 0)
 		{
 			free(line);
-			exit(0);
+			exit(last_status);
 		}
 
-		execute_command(line);
+		last_status = execute_command(line);
 	}
 
 	free(line);
