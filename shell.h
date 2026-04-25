@@ -15,7 +15,7 @@ void remove_newline(char *line);
 char **split_line(char *line);
 
 /* execute.c */
-void execute_command(char *line);
+int execute_command(char *line);
 
 /* path.c */
 char *find_path(char *command);
