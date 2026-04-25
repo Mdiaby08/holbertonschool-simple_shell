@@ -2,10 +2,10 @@
 
 extern char **environ;
 
-void execute_command(char *line)
+int execute_command(char *line)
 {
     pid_t child;
-    int status;
+    int status = 0;
     char **args;
     char *cmd_path = NULL;
 
@@ -13,12 +13,13 @@ void execute_command(char *line)
     if (!args || !args[0])
     {
         free(args);
-        return;
+        return (0);
     }
 
     if (strcmp(args[0], "env") == 0)
     {
         int i = 0;
+
         while (environ[i])
         {
             write(STDOUT_FILENO, environ[i], strlen(environ[i]));
@@ -26,7 +27,7 @@ void execute_command(char *line)
             i++;
         }
         free(args);
-        return;
+        return (0);
     }
 
     if (strchr(args[0], '/'))
@@ -37,7 +38,7 @@ void execute_command(char *line)
             write(STDERR_FILENO, args[0], strlen(args[0]));
             write(STDERR_FILENO, ": not found\n", 12);
             free(args);
-            exit(127);
+            return (127);
         }
         cmd_path = args[0];
     }
@@ -50,7 +51,7 @@ void execute_command(char *line)
             write(STDERR_FILENO, args[0], strlen(args[0]));
             write(STDERR_FILENO, ": not found\n", 12);
             free(args);
-            exit(127);
+            return (127);
         }
     }
 
@@ -61,7 +62,7 @@ void execute_command(char *line)
         if (cmd_path != args[0])
             free(cmd_path);
         free(args);
-        return;
+        return (1);
     }
 
     if (child == 0)
@@ -72,11 +73,15 @@ void execute_command(char *line)
     }
     else
     {
-        wait(&status);
+        waitpid(child, &status, 0);
     }
 
     if (cmd_path != args[0])
         free(cmd_path);
 
     free(args);
+
+    if (WIFEXITED(status))
+        return (WEXITSTATUS(status));
+    return (1);
 }
