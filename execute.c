@@ -16,12 +16,6 @@ void execute_command(char *line)
         return;
     }
 
-    if (strcmp(args[0], "exit") == 0)
-    {
-        free(args);
-        exit(0);
-    }
-
     if (strcmp(args[0], "env") == 0)
     {
         int i = 0;
