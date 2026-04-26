@@ -35,13 +35,11 @@ Holberton School curriculum. It replicates the core behaviour of `/bin/sh`.
 
 | File | Description |
 |------|-------------|
-| `shell.h` | Header file — all `#include`, `extern`, and function prototypes |
-| `shell.c` | Entry point — main loop (Read → Parse → Execute → Repeat) |
-| `prompt.c` | `display_prompt()` — prints `$ ` in interactive mode only |
-| `read_line.c` | `read_line()` — reads one line from stdin via `getline` |
+| `shell.h` | Header — all `#include`, `extern char **environ`, and function prototypes |
+| `shell.c` | Entry point — main loop (prompt → read → execute → repeat) |
 | `utils.c` | `remove_newline()`, `split_line()` — string utilities |
 | `path.c` | `find_path()`, `get_path_value()`, `build_path()` — PATH resolution |
-| `execute.c` | `execute_command()` — built-in detection, `fork`, `execve`, `wait` |
+| `execute.c` | `execute_command()` — built-in detection, fork, execve, wait |
 | `man_1_simple_shell` | Manual page for `hsh` |
 | `AUTHORS` | List of project contributors |
 
@@ -55,14 +53,16 @@ gcc -Wall -Werror -Wextra -pedantic -std=gnu89 *.c -o hsh
 
 ---
 
+## Usage
+
 ### Interactive mode
 
 ```bash
 $ ./hsh
 $ /bin/ls
-AUTHORS  execute.c  hsh  man_1_simple_shell  path.c  prompt.c  read_line.c  shell.c  shell.h  utils.c
+AUTHORS  execute.c  hsh  man_1_simple_shell  path.c  shell.c  shell.h  utils.c
 $ ls
-AUTHORS  execute.c  hsh  man_1_simple_shell  path.c  prompt.c  read_line.c  shell.c  shell.h  utils.c
+AUTHORS  execute.c  hsh  man_1_simple_shell  path.c  shell.c  shell.h  utils.c
 $ exit
 ```
 
@@ -94,7 +94,7 @@ $ echo "azerty" | ./hsh
 
 | Command | Description |
 |---------|-------------|
-| `exit` | Exits the shell with status 0 |
+| `exit` | Exits the shell with the last command's status |
 | `env` | Prints all current environment variables, one per line |
 
 Built-ins are handled directly by the shell process — no `fork` is created.
@@ -107,40 +107,90 @@ Built-ins are handled directly by the shell process — no `fork` is created.
 ┌──────────────────────────────────────────────┐
 │                  Main Loop                   │
 │                                              │
-│  1. display_prompt()  →  prints "$ "         │
-│     (only if stdin is a terminal)            │
+│  1. isatty()  →  print "$ " only if          │
+│     stdin is a terminal (not a pipe)         │
 │                                              │
-│  2. read_line()       →  reads user input    │
-│     getline() + strip trailing newline       │
+│  2. getline() →  reads user input            │
+│     auto-allocates buffer of any size        │
 │     returns -1 on EOF → shell exits          │
 │                                              │
-│  3. split_line()      →  tokenizes input     │
-│     strtok on spaces/tabs → char **args      │
+│  3. remove_newline()  →  strips '\n'         │
 │                                              │
-│  4. Built-in check                           │
-│     "exit" → exit(0)                         │
-│     "env"  → print environ, continue         │
+│  4. "exit" check  →  exit(last_status)       │
 │                                              │
-│  5. find_path()       →  resolve full path   │
-│     if '/' in cmd → test directly            │
-│     else → search each dir in PATH           │
+│  5. execute_command()                        │
+│     split_line() → char **args via strtok    │
+│     "env" → print environ[], no fork         │
+│     args[0] has '/' → access() directly      │
+│     else → find_path() searches PATH dirs    │
 │                                              │
-│  6. fork()  →  create child process          │
-│     child  : execve(path, args, environ)     │
-│     parent : waitpid() → get exit status     │
+│  6. fork()  →  duplicates the process        │
+│     child (pid==0) : execve() replaces image │
+│     parent         : waitpid() + WEXITSTATUS │
 │                                              │
 │  7. Loop back to step 1                      │
 └──────────────────────────────────────────────┘
 ```
 
-### Key system calls used
+---
+
+## File Breakdown
+
+### `shell.h`
+Centralises all `#include` directives and function prototypes so every `.c`
+file can access all functions without redeclaring them.
+`extern char **environ` gives access to the global array of `"NAME=value"`
+environment strings provided by the system.
+
+### `shell.c`
+Contains only the main loop.
+`isatty(STDIN_FILENO)` detects whether stdin is a real terminal — if not
+(pipe or script), no prompt is printed.
+`getline` handles memory allocation automatically.
+`remove_newline` strips the trailing `\n` left by `getline`.
+`exit` is handled directly in the loop before `execute_command` is called,
+so the shell process itself exits — not a child.
+
+### `utils.c`
+`remove_newline` uses `strcspn` to find the index of the first `\n` and
+replaces it with `\0`.
+`split_line` uses `strtok` to split on spaces and tabs, modifying the string
+in place. The resulting array ends with `NULL`, which is required by `execve`.
+
+### `path.c`
+`get_path_value` scans `environ[]` entry by entry until it finds one starting
+with `PATH=`, then returns a pointer to the value after the `=`.
+`build_path` allocates and assembles the string `"dir/command"`.
+`find_path` calls `build_path` for each directory in PATH and tests the
+result with `access(X_OK)`, returning the first executable match found.
+
+### `execute.c`
+`env` is handled without `fork` — the shell process prints `environ[]`
+directly and returns.
+For all other commands: if `args[0]` contains `/` the path is tested
+directly with `access`; otherwise `find_path` searches PATH.
+`fork()` duplicates the process. The child (`pid == 0`) calls `execve` which
+replaces its memory image with the new program. The parent waits with
+`waitpid`. `WEXITSTATUS` extracts the child's exit code (0–255).
+
+---
+
+## Key System Calls
 
 | Call | Purpose |
 |------|---------|
-| `getline` | Read a full line from stdin, handles any length |
-| `strtok` | Tokenize the line into an argument array |
-| `access` | Check that a file exists and is executable |
-| `fork` | Create a child process to run the command |
-| `execve` | Replace the child's image with the new program |
-| `waitpid` | Make the parent wait for the child to finish |
-| `write` | Output to stdout/stderr (avoids buffering issues) |
+| `getline` | Reads a full line from stdin, auto-manages buffer size |
+| `isatty` | Checks whether a file descriptor is connected to a terminal |
+| `strtok` | Splits a string into tokens using a delimiter set |
+| `access` | Verifies a file exists and has execute permission |
+| `fork` | Creates a child process identical to the parent |
+| `execve` | Replaces the child process image with a new program |
+| `waitpid` | Suspends the parent until the specified child terminates |
+| `write` | Writes directly to a file descriptor, bypassing stdio buffers |
+| `WEXITSTATUS` | Extracts the exit code from the status returned by waitpid |
+
+---
+
+## Authors
+
+See the `AUTHORS` file.
